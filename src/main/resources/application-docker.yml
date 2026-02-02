@@ -1,0 +1,79 @@
+server:
+  port: 8083
+
+spring:
+  datasource:
+    url: jdbc:postgresql://media-db:5432/${MEDIA_DB_NAME:media_db}
+    username: ${MEDIA_DB_USER:media_user}
+    password: ${MEDIA_DB_PASSWORD:media_pass}
+
+  data:
+    redis:
+      host: redis
+      port: 6379
+
+  application:
+    name: platform-media-service
+
+app:
+  jwt:
+    issuer: platform-auth-service
+    secret: ${AUTH_JWT_SECRET}
+
+minio:
+  endpoint: ${MINIO_ENDPOINT:http://minio:9000}
+  access-key: ${MINIO_ACCESS_KEY:minioadmin}
+  secret-key: ${MINIO_SECRET_KEY:minioadmin123}
+  bucket: media
+  upload-url-expiry-minutes: 60
+  download-url-expiry-minutes: 15
+
+management:
+  endpoints:
+    web:
+      base-path: /actuator
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+  metrics:
+    tags:
+      application: platform-media-service
+      environment: docker
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+      slo:
+        http.server.requests: 50ms,100ms,250ms,500ms,1s,2s
+  tracing:
+    enabled: true
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: http://tempo:4318/v1/traces
+
+logging:
+  level:
+    root: INFO
+  pattern:
+    level: "%5p [traceId=%X{traceId:-} spanId=%X{spanId:-}]"
+
+platform:
+  rate-limit:
+    enabled: true
+    upload:
+      capacity: 30
+      refillTokens: 30
+      refillPeriodSeconds: 60
+    api:
+      capacity: 120
+      refillTokens: 120
+      refillPeriodSeconds: 60
